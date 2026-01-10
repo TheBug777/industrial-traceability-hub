@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear LocalStorage</title>
+</head>
+<body>
+    <h1>Clear LocalStorage</h1>
+    <button onclick="clearStorage()">Clear Dynamic Router Data</button>
+    <div id="result"></div>
+
+    <script>
+        function clearStorage() {
+            localStorage.removeItem('dynamicRouter');
+            localStorage.removeItem('loginLineNo');
+            document.getElementById('result').innerHTML = 'LocalStorage cleared successfully!';
+            console.log('LocalStorage cleared:');
+            console.log('dynamicRouter:', localStorage.getItem('dynamicRouter'));
+            console.log('loginLineNo:', localStorage.getItem('loginLineNo'));
+        }
+    </script>
+</body>
+</html>
