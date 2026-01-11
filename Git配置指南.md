@@ -90,15 +90,15 @@ git commit -m "Initial commit"
 在创建好的远程仓库页面，复制仓库URL，然后执行以下命令：
 
 ```bash
-git remote add origin https://github.com/您的用户名/Industrial-admin.git
-git push -u origin master
+git remote add origin https://github.com/TheBug777/industrial-traceability-hub.git
+git push -v -u origin main
 ```
 
 如果使用的是SSH协议（需要配置SSH密钥）：
 
 ```bash
-git remote add origin git@github.com:您的用户名/Industrial-admin.git
-git push -u origin master
+git remote add origin git@github.com:TheBug777/industrial-traceability-hub.git
+git push -v -u origin main
 ```
 
 ## 7. 团队协作配置
@@ -111,7 +111,7 @@ git push -u origin master
 
 1. 克隆仓库：
    ```bash
-   git clone https://github.com/您的用户名/Industrial-admin.git
+   git clone https://github.com/TheBug777/industrial-traceability-hub.git
    ```
 
 2. 创建分支开发：
