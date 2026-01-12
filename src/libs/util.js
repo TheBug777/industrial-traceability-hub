@@ -24,7 +24,7 @@ export const hasChild = item => {
 
 const showThisMenuEle = (item, access) => {
   if (item.meta && item.meta.access && item.meta.access.length) {
-    if (hasOneOf(item.meta.access, access)) return true;
+    if (hasOneOf(access, item.meta.access)) return true;
     else return false;
   } else return true;
 };
@@ -371,7 +371,7 @@ export const findNodeDownward = (ele, tag) => {
 };
 
 export const showByAccess = (access, canViewAccess) => {
-  return hasOneOf(canViewAccess, access);
+  return hasOneOf(access, canViewAccess);
 };
 
 /**
