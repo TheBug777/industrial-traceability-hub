@@ -21,27 +21,33 @@ const whiteList = ["erp"]; // 白名单
 
 const turnTo = (to, access, next) => {
   if (to.path === "/") {
-    // console.log("准备跳转到首页");
-    // 已经登录的用户新打开 "/"" -> 跳回该用户登录后的首页
-    if (JSON.stringify(access).indexOf("workshop_manager") > -1) {
-      // 车间主管 -> 直接进入驾驶舱-车间
+    // 未登录用户访问根路径时跳转到登录页面
+    if (!getToken()) {
       next({
-        name: "control-leader-shop"
-      });
-    } else if (JSON.stringify(access).indexOf("test") > -1) {
-      // 检测员 -> 直接进入追溯查询
-      next({
-        name: "checkSearch"
-      });
-    } else if (JSON.stringify(access).indexOf("cestc") > -1) {
-      // 工程师 -> 直接进入SOP配置
-      next({
-        name: "sop"
+        name: LOGIN_PAGE_NAME
       });
     } else {
-      next({
-        name: homeName
-      });
+      // 已经登录的用户新打开 "/"" -> 跳回该用户登录后的首页
+      if (JSON.stringify(access).indexOf("workshop_manager") > -1) {
+        // 车间主管 -> 直接进入异常确认
+        next({
+          name: "checkReason"
+        });
+      } else if (JSON.stringify(access).indexOf("test") > -1) {
+        // 检测员 -> 直接进入追溯查询
+        next({
+          name: "checkSearch"
+        });
+      } else if (JSON.stringify(access).indexOf("cestc") > -1) {
+        // 工程师 -> 直接进入SOP配置
+        next({
+          name: "sop"
+        });
+      } else {
+        next({
+          name: homeName
+        });
+      }
     }
   } else {
     // 已经登录的用户打开的不是 "/"" -> 判断权限
