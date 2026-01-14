@@ -111,6 +111,8 @@ import { getLineSn } from "@/api/process";
 // function
 import { validateNumber } from "@/libs/validate";
 import { params } from "@/libs/params";
+// config
+import config from "@/config";
 
 export default {
   data() {
@@ -129,6 +131,8 @@ export default {
           return date && date.valueOf() > Date.now();
         }
       },
+      // 是否使用mock数据
+      isMock: config.isMock,
       // 原始数据
       tableDataOrg: [],
       // 处理后的当页数据
@@ -205,10 +209,7 @@ export default {
               [
                 h("img", {
                   attrs: {
-                    src: this.isMock ? "" : ""
-                    // params.row.codeUrl !== ''
-                    // ? 'data:image/png;base64,' + params.row.codeUrl
-                    // : ''
+                    src: params.row.codeUrl || ""
                   },
                   style: {
                     width: "130px"
@@ -255,8 +256,7 @@ export default {
                     type: "default",
                     size: "small",
                     disabled: this.isMock
-                      ? params.row.isUsed === true ||
-                        params.row.synchroTime.indexOf(this.nowTime) === -1
+                      ? params.row.isUsed === true
                       : params.row.isUsed === true ||
                         params.row.synchroTime.indexOf(this.nowTime) === -1
                     //  || this.snCode === "0000"
@@ -337,7 +337,7 @@ export default {
         return this.tableData.some(
           // row => row.isUsed === false && row.isCreateCode === true
           row =>
-            row.isUsed === false || row.synchroTime.indexOf(this.nowTime) > -1
+            row.isUsed === false
         );
       } else {
         // 非mock时
@@ -421,18 +421,19 @@ export default {
       this.tableDataOrg = this.tableDataOrg.map(row => {
         this.$set(row, "isCreateCode", false);
         this.$set(row, "onMouseOver", false);
-        if (
-          row.synchroTime.indexOf(this.nowTime) > -1 &&
-          row.number !== "" &&
-          row.isUsed === false
-          // && this.snCode !== "0000"
-        ) {
-          this.$set(row, "_checked", true);
-          this.selectionChange.push(row.identification);
-        }
+        // 不自动勾选，让用户手动选择
+        // if (
+        //   (this.isMock || row.synchroTime.indexOf(this.nowTime) > -1) &&
+        //   row.number !== "" &&
+        //   row.isUsed === false
+        //   // && this.snCode !== "0000"
+        // ) {
+        //   this.$set(row, "_checked", true);
+        //   this.selectionChange.push(row.identification);
+        // }
         if (
           row.isUsed === true ||
-          row.synchroTime.indexOf(this.nowTime) === -1
+          (!this.isMock && row.synchroTime.indexOf(this.nowTime) === -1)
         ) {
           this.$set(row, "_disabled", true);
         }
@@ -470,31 +471,25 @@ export default {
         // 接口数据
         this.tableData = this.tableDataOrg;
       }
-      // 生成条形码
+      console.log("Refresh data called, tableData length:", this.tableData.length);
+      // 生成条形码并设置codeUrl
       this.tableData.forEach(row => {
-        this.$nextTick(() => {
-          JsBarcode(".barcode-" + row.number.slice(-10), row.number, {
-            format: "CODE128", // 选择要使用的条形码类型
-            // lineColor: '#0aa', // 条形码颜色
-            width: 1, // 条形码宽度
-            height: 60, // 条形码高度
-            text: row.number, // 文本内容
-            fontSize: 12,
-            value: "123",
-            displayValue: true, // 是否在条形码下方显示文字
-            textPosition: "bottom" // 设置文本的垂直位置
-          });
+        console.log("Processing row:", row.number);
+        // 使用JsBarcode生成data URL
+        const canvas = document.createElement("canvas");
+        JsBarcode(canvas, row.number, {
+          format: "CODE128", // 选择要使用的条形码类型
+          width: 1, // 条形码宽度
+          height: 60, // 条形码高度
+          text: row.number, // 文本内容
+          fontSize: 12,
+          displayValue: true, // 是否在条形码下方显示文字
+          textPosition: "bottom" // 设置文本的垂直位置
         });
-      });
-      // 整合生成条形码的base64码
-      this.$nextTick(() => {
-        for (var i = 0; i < this.tableData.length; i++) {
-          this.$set(
-            this.tableData[i],
-            "codeUrl",
-            document.getElementsByClassName("barcode")[i].src
-          );
-        }
+        // 将canvas转换为data URL
+        const dataUrl = canvas.toDataURL("image/png");
+        console.log("Generated data URL:", dataUrl);
+        this.$set(row, "codeUrl", dataUrl);
       });
     },
     // 分页
@@ -525,50 +520,70 @@ export default {
     JsBarcodeCreateCode() {
       if (!this.isMock) {
         this.createdCodes.forEach(code => {
-          this.$nextTick(() => {
-            JsBarcode(".barcode-" + code.slice(-10), code, {
-              format: "CODE128", // 选择要使用的条形码类型
-              // lineColor: '#0aa', // 条形码颜色
-              width: 1, // 条形码宽度
-              height: 60, // 条形码高度
-              text: code, // 文本内容
-              value: "123",
-              fontSize: 12,
-              displayValue: true, // 是否在条形码下方显示文字
-              textPosition: "bottom" // 设置文本的垂直位置
-            });
+          console.log("Creating barcode for code:", code);
+          // 使用JsBarcode生成data URL
+          const canvas = document.createElement("canvas");
+          JsBarcode(canvas, code, {
+            format: "CODE128", // 选择要使用的条形码类型
+            width: 1, // 条形码宽度
+            height: 60, // 条形码高度
+            text: code, // 文本内容
+            fontSize: 12,
+            displayValue: true, // 是否在条形码下方显示文字
+            textPosition: "bottom" // 设置文本的垂直位置
           });
+          // 将canvas转换为data URL
+          const dataUrl = canvas.toDataURL("image/png");
+          console.log("Generated data URL:", dataUrl);
+          // 找到对应的行并设置codeUrl
+          const row = this.tableData.find(item => item.number === code);
+          if (row) {
+            this.$set(row, "codeUrl", dataUrl);
+          }
         });
       } else {
         this.tableData.forEach(row => {
-          this.$nextTick(() => {
-            JsBarcode(".barcode-" + row.number.slice(-10), row.number, {
-              format: "CODE128", // 选择要使用的条形码类型
-              // lineColor: '#0aa', // 条形码颜色
-              width: 1, // 条形码宽度
-              height: 60, // 条形码高度
-              text: row.number, // 文本内容
-              value: "123",
-              fontSize: 12,
-              displayValue: true, // 是否在条形码下方显示文字
-              textPosition: "bottom" // 设置文本的垂直位置
-            });
+          console.log("Creating barcode for row:", row.number);
+          // 使用JsBarcode生成data URL
+          const canvas = document.createElement("canvas");
+          JsBarcode(canvas, row.number, {
+            format: "CODE128", // 选择要使用的条形码类型
+            width: 1, // 条形码宽度
+            height: 60, // 条形码高度
+            text: row.number, // 文本内容
+            fontSize: 12,
+            displayValue: true, // 是否在条形码下方显示文字
+            textPosition: "bottom" // 设置文本的垂直位置
           });
+          // 将canvas转换为data URL
+          const dataUrl = canvas.toDataURL("image/png");
+          console.log("Generated data URL:", dataUrl);
+          this.$set(row, "codeUrl", dataUrl);
         });
       }
     },
     // PrintJs调用打印机
     printCodes(printable) {
+      console.log("printCodes called with:", printable);
+      // 过滤掉无效的URLs
+      const validPrintable = printable.filter(url => url && url.startsWith("data:image/"));
+      console.log("Valid printable URLs:", validPrintable);
+
+      if (validPrintable.length === 0) {
+        console.log("No valid printable URLs");
+        this.$Message.error("没有可打印的条形码");
+        return;
+      }
+
+      console.log("Calling printJS with:", validPrintable);
       printJS({
-        printable: printable,
+        printable: validPrintable,
         type: "image",
-        // header: 'Multiple Images',
-        // imageStyle: 'width:50%;margin-bottom:20px;'
         imageStyle: "width:100%"
       });
     },
     // 打印接口
-    async printBarCodes(codes) {
+    async callPrintBarCodes(codes) {
       await printBarCodes(codes);
       this.getData();
       this.selectionChange = [];
@@ -591,7 +606,7 @@ export default {
             this.createdCodes = (await createCodes(data)).data.data;
             // console.log(this.createdCodes);
             await this.getData();
-            // this.JsBarcodeCreateCode();
+            this.JsBarcodeCreateCode();
             this.proLineFormVisible = false;
           } else {
             // mock
@@ -619,7 +634,7 @@ export default {
             }
           });
           this.printCodes(printable);
-          this.printBarCodes(this.selectionChange);
+          this.callPrintBarCodes(this.selectionChange);
         } else {
           // mock
           const printable = [];
@@ -648,7 +663,7 @@ export default {
           }
         });
         this.printCodes(printable);
-        this.printBarCodes(printIdentifications);
+        this.callPrintBarCodes(printIdentifications);
       } else {
         // mock
         const printable = [];
